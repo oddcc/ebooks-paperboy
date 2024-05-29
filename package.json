@@ -1,0 +1,15 @@
+{
+  "name": "ebooks-worker-backend",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "git@github.com:oddcc/ebooks-worker-backend.git",
+  "author": "oddcc <skycc71640@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.1"
+  }
+}
