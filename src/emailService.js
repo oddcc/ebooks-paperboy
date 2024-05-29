@@ -24,6 +24,7 @@ export async function consMesg(req) {
     from: process.env.SENDER,
     to: req.to,
     subject: req.path,
+    text: "This Email has been sent via Ebooks-worker.",
     attachments: [
       {
         filename: req.path,
