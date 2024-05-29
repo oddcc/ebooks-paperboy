@@ -1,7 +1,7 @@
-const express = require('express')
+import express, { json } from "express";
 
-const nodemailer = require("nodemailer");
-const transporter = nodemailer.createTransport({
+import { createTransport } from "nodemailer";
+const transporter = createTransport({
   host: process.env.SMTP_HOST || "smtp.163.com",
   port: process.env.SMTP_PORT || 465,
   secure: !process.env.SMTP_PORT || process.env.SMTP_PORT == 465,
@@ -11,58 +11,71 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const https = require('https');
-const url = require('url');
+import { get } from "https";
+import { parse } from "url";
 
-const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS', 'SENDER'];
+const requiredEnvVars = ["EMAIL_USER", "EMAIL_PASS", "SENDER"];
 
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length) {
-  const errorMessage = `Missing required environment variables: ${missingEnvVars.join(', ')}`;
+  const errorMessage = `Missing required environment variables: ${missingEnvVars.join(
+    ", "
+  )}`;
   console.error(errorMessage);
   process.exit(1);
 }
 
-const app = express()
-const port = 3000
-app.listen(port, () => {
+const app = express();
+const port = 3000;
+const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-app.use(express.json())
+process.on("SIGTERM", () => {
+  console.debug("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    console.debug("HTTP server closed");
+  });
+});
 
-app.get('/', (req, res) => {
-  res.send(`${process.env.SENDER}`)
-})
+app.use(json());
 
-app.get('/health', (req, res) => {
-  res.send("Healthy")
-})
+app.get("/", (req, res) => {
+  res.send(`${process.env.SENDER}`);
+});
 
-app.get('/version', (req, res) => {
-  res.send(require('../package.json').version)
-})
+app.get("/health", (req, res) => {
+  res.send("Healthy");
+});
 
-app.post('/send', async (req, res) => {
+app.get("/version", (req, res) => {
+  res.send(require("../package.json").version);
+});
+
+app.post("/send", async (req, res) => {
   if (!req.body.to) {
-    res.status(400).send("Must have 'to' property which includes receivers' addresses.")
-    return
+    res
+      .status(400)
+      .send("Must have 'to' property which includes receivers' addresses.");
+    return;
   }
 
-  console.log(`Got book name: ${req.body.path}, size: ${req.body.size}, sha: ${req.body.sha}`)
-  await doSend(req.body)
-  res.send("done")
-})
+  console.log(
+    `Got book name: ${req.body.path}, size: ${req.body.size}, sha: ${req.body.sha}`
+  );
+  await doSend(req.body);
+  res.send("done");
+});
 
 async function doSend(req) {
-  let mesg = await consMesg(req)
+  let mesg = await consMesg(req);
   const result = await transporter.sendMail(mesg);
   console.log("Message sent: %s", result.messageId);
 }
 
 async function consMesg(req) {
-  let data = JSON.parse(await getData(req.url, req.size));
+  let data = JSON.parse(await getData(req.url));
 
   let mesg = {
     from: process.env.SENDER,
@@ -72,48 +85,51 @@ async function consMesg(req) {
       {
         filename: req.path,
         content: data.content,
-        encoding: 'base64',
-      }
-    ]
-  }
+        encoding: "base64",
+      },
+    ],
+  };
 
-  return mesg
+  return mesg;
 }
 
-function getData(urlStr, size) {
+function getData(urlStr) {
   return new Promise((resolve, reject) => {
-    let parsedUrl = url.parse(urlStr, true);
+    let parsedUrl = parse(urlStr, true);
     const options = {
       host: parsedUrl.hostname,
       path: parsedUrl.pathname,
       port: parsedUrl.port,
-      method: 'GET',
+      method: "GET",
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
       },
     };
 
-    let request = https.get(options, (res) => {
+    let request = get(options, (res) => {
       if (res.statusCode !== 200) {
-        console.error(`Did not get an OK from the server. Code: ${res.statusCode}`);
+        console.error(
+          `Did not get an OK from the server. Code: ${res.statusCode}`
+        );
         res.resume();
         return;
       }
-      let data = '';
+      let data = "";
 
-      res.on('data', (chunk) => {
+      res.on("data", (chunk) => {
         data += chunk;
       });
 
-      res.on('end', () => {
+      res.on("end", () => {
         console.log(`Retrieved all data, length: ${data.length}`);
         resolve(data);
       });
     });
 
-    request.on('error', (err) => {
-      console.error(err)
+    request.on("error", (err) => {
+      console.error(err);
       reject(err);
     });
-  })
+  });
 }

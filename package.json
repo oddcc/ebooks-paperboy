@@ -2,6 +2,7 @@
   "name": "ebooks-worker-backend",
   "version": "0.0.1",
   "main": "index.js",
+  "type": "module",
   "repository": "git@github.com:oddcc/ebooks-worker-backend.git",
   "author": "oddcc <skycc71640@gmail.com>",
   "license": "GPL-3.0",
@@ -10,6 +11,9 @@
     "nodemailer": "^6.9.13"
   },
   "devDependencies": {
+    "@eslint/js": "^9.3.0",
+    "eslint": "9.x",
+    "globals": "^15.3.0",
     "nodemon": "^3.1.1"
   }
 }
