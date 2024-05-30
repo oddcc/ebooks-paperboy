@@ -11,20 +11,20 @@ const transporter = createTransport({
   },
 });
 
-export async function doSend(req) {
-  let mesg = await consMesg(req);
+export async function doSend(req, to) {
+  let mesg = await consMesg(req, to);
   const result = await transporter.sendMail(mesg);
   console.log("Message sent: %s", result.messageId);
 }
 
-export async function consMesg(req) {
+export async function consMesg(req, to) {
   let data = JSON.parse(await getData(req.url));
 
   let mesg = {
     from: process.env.SENDER,
-    to: req.to,
+    to,
     subject: req.path,
-    text: "This Email has been sent via Ebooks-worker.",
+    text: "This Email has been sent via ebooks-paperboy.",
     attachments: [
       {
         filename: req.path,

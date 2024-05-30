@@ -11,6 +11,6 @@ export async function sendMiddleware(req, res) {
   console.log(
     `Got book name: ${req.body.path}, size: ${req.body.size}, sha: ${req.body.sha}`
   );
-  await doSend(req.body);
+  await doSend(req.body, req.body.to);
   res.send("done");
 }
