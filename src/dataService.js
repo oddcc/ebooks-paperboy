@@ -1,53 +1,9 @@
-import { get } from "https";
-import { parse } from "url";
-
 const REPO_MASTER =
   "https://api.github.com/repos/hehonghui/awesome-english-ebooks/git/trees/master";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
-export function getData(urlStr) {
-  return new Promise((resolve, reject) => {
-    let parsedUrl = parse(urlStr, true);
-    const options = {
-      host: parsedUrl.hostname,
-      path: parsedUrl.pathname,
-      port: parsedUrl.port,
-      method: "GET",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-      },
-    };
-
-    let request = get(options, (res) => {
-      if (res.statusCode !== 200) {
-        console.error(
-          `Did not get an OK from the server. Code: ${res.statusCode}`
-        );
-        res.resume();
-        return;
-      }
-      let data = "";
-
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-
-      res.on("end", () => {
-        console.log(`Retrieved all data, length: ${data.length}`);
-        resolve(data);
-      });
-    });
-
-    request.on("error", (err) => {
-      console.error(err);
-      reject(err);
-    });
-  });
-}
-
-async function fetchJson(url) {
+export async function doFetch(url) {
   let headers = new Headers();
   headers.append("User-Agent", USER_AGENT);
 
@@ -63,7 +19,7 @@ async function fetchJson(url) {
 }
 
 export async function findLatestNode(bookName) {
-  let master = await fetchJson(REPO_MASTER);
+  let master = await doFetch(REPO_MASTER);
   let rootTree = master.tree;
   if (!rootTree) {
     throw new Error("Failed to fetch GitHub repository master tree");
@@ -75,7 +31,7 @@ export async function findLatestNode(bookName) {
     return e.path == bookName && e.type == "tree";
   });
 
-  let books = await fetchJson(rootTree[0].url);
+  let books = await doFetch(rootTree[0].url);
   let bookTree = books.tree;
   // match te_2023.05.06 or 2023.05.06
   bookTree = bookTree.filter((e) => {
@@ -85,7 +41,7 @@ export async function findLatestNode(bookName) {
     return b.path.localeCompare(a.path);
   });
 
-  let book = await fetchJson(bookTree[0].url);
+  let book = await doFetch(bookTree[0].url);
   let fileTree = book.tree;
   fileTree = fileTree.filter((e) => {
     return e.type == "blob" && e.path.includes(".epub");

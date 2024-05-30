@@ -1,37 +1,51 @@
 import express, { json } from "express";
-// import cron from "node-cron";
 
-import { sendMiddleware } from "./sendMiddleware.js";
 import { checkBooksAndSend } from "./cronService.js";
+import logger from "./logger.js";
 
-const requiredEnvVars = ["EMAIL_USER", "EMAIL_PASS", "SENDER"];
+const requiredEnvVars = [
+  "EMAIL_USER",
+  "EMAIL_PASS",
+  "SENDER",
+  "BOOKS",
+  "RECEIVER",
+];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 if (missingEnvVars.length) {
   const errorMessage = `Missing required environment variables: ${missingEnvVars.join(
     ", "
   )}`;
-  console.error(errorMessage);
+  logger.error(errorMessage);
   process.exit(1);
 }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
 });
 
 process.on("SIGTERM", () => {
-  console.debug("SIGTERM signal received: closing HTTP server");
+  logger.debug("SIGTERM signal received: closing HTTP server");
   server.close(() => {
-    console.debug("HTTP server closed");
+    logger.debug("HTTP server closed");
   });
 });
 
 app.use(json());
+app.use((req, res, next) => {
+  logger.info(`Received a ${req.method} request for ${req.url}`);
+  next();
+});
 
-app.post("/send", sendMiddleware);
 app.post("/manual-send", async (req, res) => {
-  await checkBooksAndSend();
+  try {
+    await checkBooksAndSend();
+  } catch (err) {
+    logger.error(`manual send failed, err: ${err}`);
+    res.status(500).send();
+    return;
+  }
   res.send("done");
 });
 
@@ -43,6 +57,16 @@ app.get("/version", (req, res) => {
   res.send(require("../package.json").version);
 });
 
-// cron.schedule("* * * * *", async () => {
-//   await checkBooksAndSend();
-// });
+import cron from "node-cron";
+
+const CRONSTRING = process.env.CRONSTRING || "0 0 * * *";
+
+if (process.env.NODE_ENV == "production") {
+  cron.schedule(CRONSTRING, async () => {
+    try {
+      await checkBooksAndSend();
+    } catch (err) {
+      logger.error(`Cron job failed, err: ${err}`);
+    }
+  });
+}
