@@ -1,13 +1,14 @@
 {
-  "name": "ebooks-worker-backend",
+  "name": "ebooks-paperboy",
   "version": "0.0.1",
   "main": "./src/app.js",
   "type": "module",
-  "repository": "git@github.com:oddcc/ebooks-worker-backend.git",
+  "repository": "git@github.com:oddcc/ebooks-paperboy.git",
   "author": "oddcc <skycc71640@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
     "express": "^4.19.2",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.13"
   },
   "devDependencies": {
