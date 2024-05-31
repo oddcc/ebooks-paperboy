@@ -1,0 +1,20 @@
+# Fetching the minified node image on apline linux
+FROM node:slim
+
+# Declaring env
+ENV NODE_ENV development
+
+# Setting up the work directory
+WORKDIR /ebooks-paperboy
+
+# Copying all the files in our project
+COPY . .
+
+# Installing dependencies
+RUN yarn
+
+# Starting our application TODO
+CMD [ "node", "--env-file=.env", "src/app.js" ]
+
+# Exposing server port
+EXPOSE 3000
