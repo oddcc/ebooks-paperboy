@@ -7,7 +7,8 @@
   "author": "oddcc <skycc71640@gmail.com>",
   "license": "GPL-3.0",
   "scripts": {
-    "dev": "nodemon --env-file=.env ./src/app.js"
+    "dev": "nodemon --env-file=.env ./src/app.js",
+    "clean": "rm -rf .*-audit.json *.log"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -20,6 +21,6 @@
     "@eslint/js": "^9.3.0",
     "eslint": "9.x",
     "globals": "^15.3.0",
-    "nodemon": "^3.1.1"
+    "nodemon": "^3.1.2"
   }
 }
