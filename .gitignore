@@ -192,3 +192,6 @@ dist
 
 *.epub
 .*.json
+
+# Custom
+*.log.gz

@@ -24,9 +24,23 @@ const transporter = createTransport({
 }
 */
 export async function doSend(req) {
-  let mesg = await consMesg(req);
-  const result = await transporter.sendMail(mesg);
-  logger.info(`Message sent: ${result.messageId}`);
+  try {
+    let mesg = await consMesg(req);
+    if (process.env.SEND_EMAIL === "false") {
+      mesg.attachments = !!mesg.attachments;
+      logger.info(
+        `Environment variable SEND_EMAIL is false, pass email sending`,
+        mesg
+      );
+    } else {
+      const result = await transporter.sendMail(mesg);
+      logger.info(`Message sent: ${result.messageId}`);
+    }
+  } catch (err) {
+    logger.error("Send email failed.", err);
+    return false;
+  }
+  return true;
 }
 
 export async function consMesg(req) {

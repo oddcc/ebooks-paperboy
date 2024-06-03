@@ -49,3 +49,44 @@ export async function findLatestNode(bookName) {
 
   return fileTree[0];
 }
+
+// https://api.cloudflare.com/client/v4/accounts/{account_id}/storage/kv/namespaces/{namespace_id}/values/{key_name}
+export async function read(key) {
+  let headers = construstHeaders();
+  let response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.KV_ACCOUNT_ID}/storage/kv/namespaces/${process.env.KV_NAMESPACE_ID}/values/${key}`,
+    {
+      headers,
+    }
+  );
+  if (!response.ok && response.status != 404) {
+    let reason = await response.text();
+    throw new Error(`Failed to read key: ${key}, reason: ${reason}`);
+  }
+  return await response.json();
+}
+
+export async function write(key, value) {
+  let headers = construstHeaders();
+  let response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.KV_ACCOUNT_ID}/storage/kv/namespaces/${process.env.KV_NAMESPACE_ID}/values/${key}`,
+    {
+      method: "put",
+      headers,
+      body: JSON.stringify(value),
+    }
+  );
+  if (!response.ok) {
+    let reason = await response.text();
+    throw new Error(`Failed to write key: ${key}, reason: ${reason}`);
+  }
+  return await response.json();
+}
+
+function construstHeaders() {
+  let headers = new Headers();
+  headers.append("User-Agent", USER_AGENT);
+  headers.append("Content-Type", "application/json");
+  headers.append("Authorization", `Bearer ${process.env.KV_TOKEN}`);
+  return headers;
+}

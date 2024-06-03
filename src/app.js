@@ -1,4 +1,5 @@
 import express, { json } from "express";
+import cron from "node-cron";
 
 import { checkBooksAndSend } from "./cronService.js";
 import logger from "./logger.js";
@@ -21,16 +22,37 @@ if (missingEnvVars.length) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
-
-process.on("SIGTERM", () => {
-  logger.debug("SIGTERM signal received: closing HTTP server");
-  server.close(() => {
-    logger.debug("HTTP server closed");
+if (process.env.ENABLE_CRON === 'true') {
+  const server = app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
   });
-});
+  
+  process.on("SIGTERM", () => {
+    logger.debug("SIGTERM signal received: closing HTTP server");
+    server.close(() => {
+      logger.debug("HTTP server closed");
+    });
+  });
+  const CRONSTRING = process.env.CRONSTRING || "0 0 * * *";
+
+  if (process.env.ENABLE_CRON === "true") {
+    logger.info(`Cron job scheduled`);
+    cron.schedule(CRONSTRING, async () => {
+      try {
+        await checkBooksAndSend();
+      } catch (err) {
+        logger.error(`Cron job failed, err: ${err}`);
+      }
+    });
+  }
+} else {
+  logger.info(`Cron job is not scheduled, let's check new books and quit.`);
+  try {
+    await checkBooksAndSend();
+  } catch (err) {
+    logger.error(`Check books and send job failed, err: ${err}`);
+  }
+}
 
 app.use(json());
 app.use((req, res, next) => {
@@ -53,20 +75,9 @@ app.get("/health", (req, res) => {
   res.send("Healthy");
 });
 
+import { readFileSync } from "fs";
+const packageJSON = JSON.parse(readFileSync("./package.json"));
+
 app.get("/version", (req, res) => {
-  res.send(require("../package.json").version);
+  res.send(packageJSON.version);
 });
-
-import cron from "node-cron";
-
-const CRONSTRING = process.env.CRONSTRING || "0 0 * * *";
-
-if (process.env.NODE_ENV == "production") {
-  cron.schedule(CRONSTRING, async () => {
-    try {
-      await checkBooksAndSend();
-    } catch (err) {
-      logger.error(`Cron job failed, err: ${err}`);
-    }
-  });
-}
