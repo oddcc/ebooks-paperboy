@@ -1,0 +1,32 @@
+name: Daily check workflow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  CheckAndSend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Create env file
+        run: |
+          touch .env
+          echo "EMAIL_USER=${{ vars.EMAIL_USER }}" >> .env
+          echo "SENDER=${{ vars.SENDER }}" >> .env
+          echo "BOOKS=${{ vars.BOOKS }}" >> .env
+          echo "RECEIVER=${{ vars.RECEIVER }}" >> .env
+          echo "ENABLE_CRON=${{ vars.ENABLE_CRON }}" >> .env
+          echo "SEND_EMAIL=${{ vars.SEND_EMAIL }}" >> .env
+          echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" >> .env
+          echo "KV_NAMESPACE_ID=${{ secrets.KV_NAMESPACE_ID }}" >> .env
+          echo "KV_ACCOUNT_ID=${{ secrets.KV_ACCOUNT_ID }}" >> .env
+          echo "KV_TOKEN=${{ secrets.KV_TOKEN }}" >> .env
+      - name: Do the job
+        run: |
+          node --env-file=.env ./src/app.js
