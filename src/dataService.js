@@ -50,8 +50,20 @@ export async function findLatestNode(bookName) {
   return fileTree[0];
 }
 
+export async function getBookInfoFromCache(bookName, to) {
+  return read(constKey(bookName, to));
+}
+
+export async function setBookInfoToCache(bookName, to, value) {
+  return write(constKey(bookName, to), value);
+}
+
+function constKey(bookName, to) {
+  return `${bookName}||${to}`;
+}
+
 // https://api.cloudflare.com/client/v4/accounts/{account_id}/storage/kv/namespaces/{namespace_id}/values/{key_name}
-export async function read(key) {
+async function read(key) {
   let headers = construstHeaders();
   let response = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${process.env.KV_ACCOUNT_ID}/storage/kv/namespaces/${process.env.KV_NAMESPACE_ID}/values/${key}`,
@@ -66,7 +78,7 @@ export async function read(key) {
   return await response.json();
 }
 
-export async function write(key, value) {
+async function write(key, value) {
   let headers = construstHeaders();
   let response = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${process.env.KV_ACCOUNT_ID}/storage/kv/namespaces/${process.env.KV_NAMESPACE_ID}/values/${key}`,

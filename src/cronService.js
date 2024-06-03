@@ -1,4 +1,4 @@
-import { findLatestNode, write, read } from "./dataService.js";
+import { findLatestNode, getBookInfoFromCache, setBookInfoToCache } from "./dataService.js";
 import { doSend } from "./emailService.js";
 import logger from "./logger.js";
 
@@ -12,13 +12,13 @@ export async function checkBooksAndSend() {
       `Got book info for bookName: ${bookName}, ${JSON.stringify(bookInfo)}`
     );
 
-    let existBookInfo = await read(bookName);
+    let to = process.env.RECEIVER;
+    let existBookInfo = await getBookInfoFromCache(bookName, to);
     if (bookInfo.sha === existBookInfo.sha) {
       logger.info(`Book ${bookName}, path ${bookInfo.path} is already sent.`);
       continue;
     }
 
-    let to = process.env.RECEIVER;
     let success = await doSend({
       ...bookInfo,
       to,
@@ -28,7 +28,7 @@ export async function checkBooksAndSend() {
       return;
     }
     console.log(`Sent book ${bookName} to ${to}`);
-    await write(bookName, bookInfo);
+    await setBookInfoToCache(bookName, to, bookInfo);
   }
 
   logger.info("Check new books finished.");
