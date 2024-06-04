@@ -45,15 +45,16 @@ export async function doSend(req) {
 
 export async function consMesg(req) {
   let data = await doFetch(req.url);
+  let title = beautifyTitle(req.path);
 
   let mesg = {
     from: process.env.SENDER,
     to: req.to,
-    subject: req.path, // TODO generate subject
+    subject: title,
     text: "This Email has been sent via ebooks-paperboy.",
     attachments: [
       {
-        filename: req.path,
+        filename: title,
         content: data.content,
         encoding: "base64",
       },
@@ -61,4 +62,39 @@ export async function consMesg(req) {
   };
 
   return mesg;
+}
+
+// new_yorker.2023.02.06.epub -> The New Yorker 6 Feb 2023.epub
+// TheEconomist.2023.03.04.epub -> The Economist 4 Mar 2023.epub
+// Atlantic_2022.01.02.epub -> The Atlantic 2 Jan 2022.epub
+// wired_2024.06.02.epub -> Wired Magazine 2 Jun 2024.epub
+export function beautifyTitle(title) {
+  let dateStr;
+  let titleStr;
+  if (title.startsWith("new_yorker")) {
+    titleStr = "The New Yorker";
+    dateStr = title.substring(title.indexOf(".") + 1).replace(".epub", "");
+  } else if (title.startsWith("TheEconomist")) {
+    titleStr = "The Economist";
+    dateStr = title.substring(title.indexOf(".") + 1).replace(".epub", "");
+  } else if (title.startsWith("Atlantic")) {
+    titleStr = "The Atlantic";
+    dateStr = title.substring(title.indexOf("_") + 1).replace(".epub", "");
+  } else if (title.startsWith("wired")) {
+    titleStr = "Wired Magazine";
+    dateStr = title.substring(title.indexOf("_") + 1).replace(".epub", "");
+  } else {
+    throw new Error("Unknown title format");
+  }
+  let parsedDate = parseDateStr(dateStr);
+  return titleStr + " " + parsedDate + ".epub";
+}
+
+// 2023.02.06 -> 6 Feb 2023
+export function parseDateStr(dateStr) {
+  let date = new Date(dateStr);
+  let day = date.getDate();
+  let month = date.toLocaleString("default", { month: "short" });
+  let year = date.getFullYear();
+  return `${day} ${month} ${year}`;
 }
