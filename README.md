@@ -10,6 +10,8 @@ Repository variables:
 - SENDER: the display name for the email sender. For example, `'"EBOOKS_WORKER" <exampleuse@xxx.com>'`
 
 Repository variables:
+- SMTP_HOST: smtp host for `EMAIL_USER`
+- SMTP_PORT: smtp port for `EMAIL_USER`
 - EMAIL_PASS: the password for `EMAIL_USER`
 - KV_ACCOUNT_ID: Cloudflare account id used to access Cloudflare KV. See [Find account ID](https://developers.cloudflare.com/fundamentals/setup/find-account-and-zone-ids/#find-account-id-workers-and-pages) for detail
 - KV_NAMESPACE_ID: you can find it on Cloudflare KV dashboard, if there isn't one, you need to create a new namespace first. See [Cloudflare Workers KV](https://developers.cloudflare.com/kv/) for instructions
